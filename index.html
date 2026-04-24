@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora IRPF España 2012-2026 | Progresividad en Frío</title>
+  <meta name="description" content="Calculadora educativa del IRPF y Seguridad Social en España (2012-2026). Analiza tu nómina, los tramos fiscales y la pérdida de poder adquisitivo por progresividad en frío." />
+
+  <!-- Estilos -->
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <!-- Chart.js (sin instalación, cargado desde CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     CABECERA
+     ══════════════════════════════════════════════════════════ -->
+<header>
+  <div class="header-badge">España 2012 – 2026</div>
+  <h1>Calculadora de Salarios e IRPF</h1>
+  <p>Auditoría educativa del impacto fiscal en la nómina y análisis de la <strong>progresividad en frío</strong> ajustada a la inflación real.</p>
+</header>
+
+<!-- ══════════════════════════════════════════════════════════
+     NAVEGACIÓN POR PESTAÑAS
+     ══════════════════════════════════════════════════════════ -->
+<nav class="tabs-nav" role="tablist">
+  <button class="tab-btn active" data-tab="tab-calculadora" role="tab" id="btn-calculadora">
+    🧮 Calculadora de Nómina
+  </button>
+  <button class="tab-btn" data-tab="tab-progresividad" role="tab" id="btn-progresividad">
+    📉 Progresividad en Frío
+  </button>
+  <button class="tab-btn" data-tab="tab-normativa" role="tab" id="btn-normativa">
+    📜 Normativa Histórica
+  </button>
+</nav>
+
+<!-- ══════════════════════════════════════════════════════════
+     CONTENIDO PRINCIPAL
+     ══════════════════════════════════════════════════════════ -->
+<main>
+
+  <!-- ────────────────────────────────────────────────────────
+       PESTAÑA 1: CALCULADORA DE NÓMINA
+       ──────────────────────────────────────────────────────── -->
+  <section id="tab-calculadora" class="tab-panel active" role="tabpanel">
+
+    <h2 class="section-title">🧮 Calculadora de Nómina</h2>
+    <p class="section-desc">
+      Introduce un salario bruto anual y selecciona el año para ver el desglose completo:
+      Seguridad Social, IRPF tramo a tramo, coste para la empresa y salario neto.
+    </p>
+
+    <div class="callout">
+      <span class="icon">💡</span>
+      <span>
+        <strong>Cómo leer este cálculo:</strong> El salario bruto que negocias con tu empresa
+        no es lo que recibes. De él se descuentan las cotizaciones a la Seguridad Social y la retención del IRPF.
+        La empresa, además, paga cuotas propias que incrementan el coste laboral real.
+      </span>
+    </div>
+
+    <!-- Formulario -->
+    <div class="card">
+      <div class="card-title">Datos de entrada</div>
+      <div class="form-row">
+        <div class="field">
+          <label for="calc-bruto">Salario bruto anual (€)</label>
+          <input type="number" id="calc-bruto" value="35000" min="0" max="500000" step="500" />
+          <span class="hint">Introduce el salario bruto que aparece en tu contrato</span>
+        </div>
+        <div class="field">
+          <label for="calc-anio">Año fiscal</label>
+          <select id="calc-anio"></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resultado -->
+    <div id="calc-resultado" class="hidden">
+
+      <!-- Métricas principales -->
+      <div class="metrics-grid">
+        <div class="metric green">
+          <div class="metric-label">Salario neto anual</div>
+          <div class="metric-value" id="m-neto">—</div>
+          <div class="metric-sub">Mensual: <span id="m-neto-mes">—</span></div>
+        </div>
+        <div class="metric red">
+          <div class="metric-label">IRPF retenido</div>
+          <div class="metric-value" id="m-irpf">—</div>
+        </div>
+        <div class="metric yellow">
+          <div class="metric-label">SS Trabajador</div>
+          <div class="metric-value" id="m-ss-tra">—</div>
+        </div>
+        <div class="metric purple">
+          <div class="metric-label">Coste empresa total</div>
+          <div class="metric-value" id="m-coste">—</div>
+          <div class="metric-sub">SS empresa: <span id="m-ss-emp">—</span></div>
+        </div>
+      </div>
+
+      <!-- Tipos efectivos -->
+      <div class="card">
+        <div class="card-title">Tipos efectivos sobre el bruto</div>
+
+        <div style="margin-bottom: 1rem;">
+          <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:0.3rem;">
+            <span>Tipo efectivo IRPF</span>
+            <strong id="m-tipo-irpf">—</strong>
+          </div>
+          <div class="bar-wrap"><div class="bar-fill bar-red" id="bar-irpf" style="width:0%"></div></div>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+          <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:0.3rem;">
+            <span>Tipo efectivo SS trabajador</span>
+            <strong id="m-tipo-ss">—</strong>
+          </div>
+          <div class="bar-wrap"><div class="bar-fill bar-accent" id="bar-ss" style="width:0%"></div></div>
+        </div>
+
+        <div>
+          <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:0.3rem;">
+            <span>Retención total (IRPF + SS)</span>
+            <strong id="m-tipo-total">—</strong>
+          </div>
+          <div class="bar-wrap"><div class="bar-fill bar-green" id="bar-total" style="width:0%"></div></div>
+        </div>
+      </div>
+
+      <!-- Tabla desglose completo -->
+      <div class="card">
+        <div class="card-title">Desglose completo de la nómina</div>
+        <div style="overflow-x:auto;">
+          <table class="breakdown">
+            <thead>
+              <tr>
+                <th>Concepto</th>
+                <th class="text-right">Importe (€/año)</th>
+              </tr>
+            </thead>
+            <tbody id="calc-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /calc-resultado -->
+  </section>
+
+
+  <!-- ────────────────────────────────────────────────────────
+       PESTAÑA 2: PROGRESIVIDAD EN FRÍO
+       ──────────────────────────────────────────────────────── -->
+  <section id="tab-progresividad" class="tab-panel" role="tabpanel">
+
+    <h2 class="section-title">📉 Progresividad en Frío</h2>
+    <p class="section-desc">
+      ¿Cuánto vale realmente tu nómina comparada con la de años anteriores?
+      Introduce un salario equivalente en euros de hoy y verás cuánto poder adquisitivo
+      se ha ganado o perdido año a año por la «progresividad en frío».
+    </p>
+
+    <div class="callout">
+      <span class="icon">🔍</span>
+      <span>
+        <strong>¿Qué es la progresividad en frío?</strong>
+        Cuando los salarios suben con la inflación pero los tramos del IRPF no se actualizan,
+        más renta pasa a tributar a tipos más altos aunque el poder adquisitivo real sea el mismo.
+        Esto genera una subida de impuestos «silenciosa» sin que el legislador apruebe ninguna subida formal.
+      </span>
+    </div>
+
+    <!-- Formulario -->
+    <div class="card">
+      <div class="card-title">Salario de referencia</div>
+      <div class="form-row">
+        <div class="field">
+          <label for="prog-bruto">Salario bruto equivalente en 2026 (€/año)</label>
+          <input type="number" id="prog-bruto" value="35000" min="15000" max="100000" step="1000" />
+          <span class="hint">El análisis comparará cuánto valía ese mismo poder adquisitivo en cada año.</span>
+        </div>
+        <div class="field" style="justify-content:flex-end;">
+          <button id="prog-btn" style="
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            border: none; border-radius: 8px; color: #0f172a;
+            font-family: inherit; font-size: 0.95rem; font-weight: 700;
+            padding: 0.65rem 1.5rem; cursor: pointer;
+            transition: opacity 0.2s; align-self: flex-end;
+          " onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+            Calcular →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resumen -->
+    <div class="card" style="background: rgba(56,189,248,0.05); border-color: rgba(56,189,248,0.2);">
+      <p id="prog-resumen" style="font-size:0.95rem; color: var(--text-muted);">Calculando…</p>
+    </div>
+
+    <!-- Gráfico -->
+    <div class="chart-wrap">
+      <canvas id="prog-chart"></canvas>
+    </div>
+
+    <!-- Tabla comparativa -->
+    <div class="card">
+      <div class="card-title">Detalle por año</div>
+      <div class="norm-table-wrap">
+        <table class="norm-table">
+          <thead>
+            <tr>
+              <th>Año</th>
+              <th>IPC Acum.</th>
+              <th>Bruto nominal ese año</th>
+              <th>Neto real (€ 2026)</th>
+              <th>Diferencia vs. 2026</th>
+              <th>Tipo ef. IRPF</th>
+            </tr>
+          </thead>
+          <tbody id="prog-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </section>
+
+
+  <!-- ────────────────────────────────────────────────────────
+       PESTAÑA 3: NORMATIVA HISTÓRICA
+       ──────────────────────────────────────────────────────── -->
+  <section id="tab-normativa" class="tab-panel" role="tabpanel">
+
+    <h2 class="section-title">📜 Normativa Histórica</h2>
+    <p class="section-desc">
+      Consulta los parámetros fiscales y laborales de cada año: bases de cotización,
+      tipos de la Seguridad Social, MEI, mínimos personales y tramos del IRPF.
+    </p>
+
+    <div class="callout">
+      <span class="icon">📁</span>
+      <span>
+        <strong>¿Quieres actualizar estos datos?</strong>
+        Todos los valores de esta tabla están en el archivo
+        <code>js/datos/parametros.js</code> y <code>js/datos/irpf.js</code>.
+        Están muy comentados y son fáciles de editar.
+      </span>
+    </div>
+
+    <!-- Tabla parámetros generales -->
+    <div class="card">
+      <div class="card-title">Parámetros generales por año</div>
+      <div class="norm-table-wrap">
+        <table class="norm-table">
+          <thead>
+            <tr>
+              <th>Año</th>
+              <th>Base máx. SS</th>
+              <th>SS Empresa</th>
+              <th>SS Trabajador</th>
+              <th>MEI (emp/trab)</th>
+              <th>Solidaridad (t1/t2/t3)</th>
+              <th>Mín. exento</th>
+              <th>Gastos fijos</th>
+              <th>Art.20 red.máx</th>
+            </tr>
+          </thead>
+          <tbody id="norm-general-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tabla tramos IRPF -->
+    <div class="card">
+      <div class="card-title">Tramos del IRPF por año</div>
+      <div class="norm-table-wrap">
+        <table class="norm-table">
+          <thead>
+            <tr>
+              <th>Año</th>
+              <th>Tramos (tipo por tramo)</th>
+            </tr>
+          </thead>
+          <tbody id="norm-irpf-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </section>
+
+</main>
+
+<!-- ══════════════════════════════════════════════════════════
+     PIE DE PÁGINA
+     ══════════════════════════════════════════════════════════ -->
+<footer style="
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  border-top: 1px solid var(--border);
+  margin-top: 2rem;
+">
+  <p>Cálculos de Jon González (Twitter). El repositorio está aquí: <a href="https://github.com/iagovar/calculadora-salarios-progresividad-frio" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: underline;">https://github.com/iagovar/calculadora-salarios-progresividad-frio</a></p>
+</footer>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     SCRIPTS — ORDEN IMPORTANTE:
+     1. Datos (constantes que usan los cálculos)
+     2. Cálculos (funciones que usan los datos)
+     3. Interfaz (funciones que usan los cálculos)
+     ══════════════════════════════════════════════════════════ -->
+
+<!-- 1. Datos -->
+<script src="js/datos/ipc.js"></script>
+<script src="js/datos/parametros.js"></script>
+<script src="js/datos/irpf.js"></script>
+
+<!-- 2. Cálculos -->
+<script src="js/calculos/inflacion.js"></script>
+<script src="js/calculos/nomina.js"></script>
+
+<!-- 3. Interfaz -->
+<script src="js/ui/app.js"></script>
+
+</body>
+</html>
